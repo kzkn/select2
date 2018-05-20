@@ -1471,12 +1471,6 @@ S2.define('select2/selection/base',[
       self.$selection.removeAttr('aria-owns');
 
       self.$selection.focus();
-      // REMOVE THIS
-      /*
-      window.setTimeout(function () {
-        self.$selection.focus();
-      }, 0);
-      */
 
       self._detachCloseHandler(container);
     });
