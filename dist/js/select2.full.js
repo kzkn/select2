@@ -772,6 +772,23 @@ S2.define('select2/utils',[
     $element.append($nodes);
   };
 
+  // Prepend an array of jQuery nodes to a given element.
+  Utils.prependMany = function ($element, $nodes) {
+    // jQuery 1.7.x does not support $.fn.prepend() with an array
+    // Fall back to a jQuery object collection using $.fn.add()
+    if ($.fn.jquery.substr(0, 3) === '1.7') {
+      var $jqNodes = $();
+
+      $.map($nodes, function (node) {
+        $jqNodes = $jqNodes.add(node);
+      });
+
+      $nodes = $jqNodes;
+    }
+
+    $element.prepend($nodes);
+  };
+
   return Utils;
 });
 
@@ -1641,7 +1658,8 @@ S2.define('select2/selection/multiple',[
   };
 
   MultipleSelection.prototype.clear = function () {
-    this.$selection.find('.select2-selection__rendered').empty();
+    this.$selection.find(
+      '.select2-selection__rendered .select2-selection__choice').remove();
   };
 
   MultipleSelection.prototype.display = function (data, container) {
@@ -1688,7 +1706,7 @@ S2.define('select2/selection/multiple',[
 
     var $rendered = this.$selection.find('.select2-selection__rendered');
 
-    Utils.appendMany($rendered, $selections);
+    Utils.prependMany($rendered, $selections);
   };
 
   return MultipleSelection;
@@ -1829,14 +1847,16 @@ S2.define('select2/selection/allowClear',[
       return;
     }
 
-    var $remove = $(
-      '<span class="select2-selection__clear">' +
-        '&times;' +
-      '</span>'
-    );
+    var $remove = this.$selection.find('.select2-selection__clear');
+    if ($remove.length === 0) {
+      $remove = $(
+        '<span class="select2-selection__clear">' +
+          '&times;' +
+        '</span>'
+      );
+      this.$selection.find('.select2-selection__rendered').prepend($remove);
+    }
     $remove.data('data', data);
-
-    this.$selection.find('.select2-selection__rendered').prepend($remove);
   };
 
   return AllowClear;
@@ -2014,8 +2034,10 @@ S2.define('select2/selection/search',[
 
     decorated.call(this, data);
 
-    this.$selection.find('.select2-selection__rendered')
-                   .append(this.$searchContainer);
+    if (!$.contains(document.body, this.$searchContainer[0])) {
+      var $rendered = this.$selection.find('.select2-selection__rendered');
+      $rendered.append(this.$searchContainer);
+    }
 
     this.resizeSearch();
     if (searchHadFocus) {
